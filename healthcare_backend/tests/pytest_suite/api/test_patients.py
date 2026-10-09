@@ -3,7 +3,7 @@ import pytest
 from django.urls import reverse
 
 from apps.patients.models import Patient
-from tests.helpers import assert_error, names, patient_payload
+from helpers import assert_error, names, patient_payload
 
 LIST = reverse("patient-list")
 

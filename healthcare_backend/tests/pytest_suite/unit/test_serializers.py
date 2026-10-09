@@ -3,7 +3,7 @@ import pytest
 
 from apps.accounts.serializers import LoginSerializer, RegisterSerializer
 from apps.patients.serializers import GENDER_ALIASES, PatientSerializer
-from tests.helpers import PASSWORD
+from helpers import PASSWORD
 
 pytestmark = pytest.mark.django_db
 

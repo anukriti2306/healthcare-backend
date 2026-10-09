@@ -1,5 +1,5 @@
 """Small, dependency-free helpers shared by the test modules."""
-from tests.factories import DEFAULT_PASSWORD
+from factories import DEFAULT_PASSWORD
 
 PASSWORD = DEFAULT_PASSWORD
 
@@ -54,3 +54,4 @@ def doctor_payload(**overrides):
 def names(response):
     """Names from a list response, in order."""
     return [item["name"] for item in response.json()]
+

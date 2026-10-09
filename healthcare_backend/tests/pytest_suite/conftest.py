@@ -6,7 +6,7 @@ from django.core.cache import cache
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from tests.factories import DoctorFactory, MappingFactory, PatientFactory, UserFactory
+from factories import DoctorFactory, MappingFactory, PatientFactory, UserFactory
 
 _AUTO_MARKERS = {"unit": "unit", "api": "api", "integration": "integration"}
 

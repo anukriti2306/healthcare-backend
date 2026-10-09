@@ -3,7 +3,7 @@ import pytest
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from tests.helpers import PASSWORD, assert_error, doctor_payload, patient_payload
+from helpers import PASSWORD, assert_error, doctor_payload, patient_payload
 
 
 def authed(access):

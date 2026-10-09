@@ -8,7 +8,7 @@ from apps.doctors.models import Doctor
 from apps.mappings.models import PatientDoctorMapping
 from apps.mappings.serializers import MappingSerializer
 from apps.patients.models import Patient
-from tests.helpers import assert_error
+from helpers import assert_error
 
 LIST = reverse("mapping-list")
 

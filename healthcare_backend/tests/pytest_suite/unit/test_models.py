@@ -3,7 +3,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-
+from datetime import timedelta
 from apps.doctors.models import Doctor
 from apps.mappings.models import PatientDoctorMapping
 from apps.patients.models import Patient
@@ -103,6 +103,16 @@ class TestPatientModel:
         assert not Patient.objects.filter(pk=patient.pk).exists()
 
     def test_timestamps_are_maintained_automatically(self, patient_factory):
+        patient = patient_factory()
+        created, first_update = patient.created_at, patient.updated_at
+
+        patient.name = "Renamed"
+        patient.updated_at = first_update + timedelta(seconds=1)
+        patient.save()
+        patient.refresh_from_db()
+
+        assert patient.created_at == created
+        assert patient.updated_at > first_update
         patient = patient_factory()
         created, first_update = patient.created_at, patient.updated_at
         patient.name = "Renamed"

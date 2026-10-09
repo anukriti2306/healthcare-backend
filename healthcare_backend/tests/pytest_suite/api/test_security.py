@@ -8,7 +8,7 @@ from django.urls import reverse
 from apps.doctors.models import Doctor
 from apps.mappings.models import PatientDoctorMapping
 from apps.patients.models import Patient
-from tests.helpers import assert_error, doctor_payload, patient_payload
+from helpers import assert_error, doctor_payload, patient_payload
 
 ENDPOINTS = [
     ("get", "auth-me", None, None),

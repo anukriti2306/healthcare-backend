@@ -7,7 +7,7 @@ from django.test import RequestFactory
 from django.urls import reverse
 
 from apps.core.views import not_found, server_error
-from tests.helpers import assert_error
+from helpers import assert_error
 
 
 class TestHealthCheck:

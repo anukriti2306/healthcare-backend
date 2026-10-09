@@ -5,7 +5,7 @@ modes through the real stack and assert that every one honours the envelope.
 import pytest
 from django.urls import reverse
 
-from tests.helpers import assert_error, patient_payload
+from helpers import assert_error, patient_payload
 
 SCENARIOS = [
     pytest.param("get", "/api/patients/", None, "anon", 401, "not_authenticated", id="no-token"),

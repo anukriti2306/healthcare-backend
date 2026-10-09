@@ -9,7 +9,7 @@ from django.urls import reverse
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
-from tests.helpers import PASSWORD, assert_error
+from helpers import PASSWORD, assert_error
 
 User = get_user_model()
 
