@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 
 from apps.patients.models import Patient
 
+from .filters import MappingFilter
 from .models import PatientDoctorMapping
 from .serializers import MappingSerializer, PatientDoctorSerializer
 
@@ -24,7 +25,7 @@ class MappingListCreateView(generics.ListCreateAPIView):
     """
 
     serializer_class = MappingSerializer
-    filterset_fields = ["patient", "doctor"]
+    filterset_class = MappingFilter
     ordering_fields = ["created_at"]
 
     def get_queryset(self):

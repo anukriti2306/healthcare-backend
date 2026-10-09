@@ -5,7 +5,7 @@ A REST API for managing patients, doctors and patient-doctor assignments, built 
 - Users register and log in with email + password and receive JWTs.
 - Authenticated users create and manage patients and doctors.
 - Doctors can be assigned to (and removed from) patients.
-- Every endpoint in the assignment is implemented, tested (87 automated tests on PostgreSQL) and documented (Swagger UI + Postman collection).
+- Every endpoint in the assignment is implemented, tested (470+ automated pytest tests on PostgreSQL, 100% line and branch coverage) and documented (Swagger UI + Postman collection).
 
 ---
 
@@ -50,9 +50,17 @@ healthcare_backend/
 │   ├── patients/              # Patient model + CRUD
 │   ├── doctors/               # Doctor model + CRUD
 │   └── mappings/              # Patient<->Doctor assignments
+├── tests/                     # pytest suite (see "Running the tests")
+│   ├── conftest.py            # shared fixtures: clients, users, factories
+│   ├── factories.py           # factory_boy factories (deterministic data)
+│   ├── unit/                  # error handler, validators, permissions, models, constraints, settings
+│   ├── api/                   # one module per resource + security, error contract, performance, ops
+│   └── integration/           # multi-user, multi-step scenarios through the public API
 ├── scripts/
 │   ├── setup_db.sql           # creates the DB role + database
 │   └── smoke_test.py          # end-to-end check against a running server
+├── pytest.ini  .coveragerc  requirements-dev.txt
+├── .github/workflows/ci.yml   # PostgreSQL service, Python 3.10/3.12/3.13 matrix, coverage gate
 └── postman/
     └── Healthcare_Backend.postman_collection.json
 ```
@@ -139,10 +147,27 @@ In **DBeaver**, create a PostgreSQL connection (`localhost:5432`, database `heal
 ## Running the tests
 
 ```bash
-python manage.py test
+pip install -r requirements-dev.txt     # adds pytest, pytest-django, pytest-cov, factory-boy
+pytest                                  # whole suite (~6 s)
+pytest --cov --cov-report=term-missing  # with line + branch coverage
+pytest -m unit                          # or: -m api, -m integration
+pytest tests/api/test_mappings.py -k duplicate
 ```
 
-87 tests run against PostgreSQL in a temporary `test_healthcare_db` database that is created and dropped automatically (this is why the DB role has `CREATEDB`). They cover registration and login, JWT handling, validation, ownership isolation between users, permissions, filtering, cascading deletes and a full end-to-end flow.
+The suite runs against PostgreSQL in a temporary `test_healthcare_db` that is created and dropped automatically (this is why the DB role has `CREATEDB`). Only `SECRET_KEY` has a test fallback; database settings come from `.env` or real environment variables, so tests always run on the production engine.
+
+**What is covered**
+
+| Layer | Folder | What it proves |
+|---|---|---|
+| Unit | `tests/unit/` | Error handler (409/500 mapping, no leaks, rollback), phone validator, permission class, pagination, env helpers, model constraints enforced *by the database* (case-insensitive unique email, unique mapping, cascades), migrations in sync with models, secure-by-default settings, public URL contract |
+| API | `tests/api/` | Every endpoint: success paths, boundary values, validation, filtering/search/ordering, pagination, JWT edge cases (expired, tampered, wrong key, `alg: none`, deleted/inactive user), rate limiting, user-enumeration resistance, mass-assignment protection |
+| Security | `tests/api/test_security.py` | Parametrized matrices: every endpoint rejects anonymous callers; one user can never read or change another's patients or mappings; 404 for "not yours" is identical to "doesn't exist" |
+| Contract | `tests/api/test_error_contract.py` | Thirteen different failure modes all return the same error envelope |
+| Performance | `tests/api/test_performance.py` | Query count must not grow with row count (guards against N+1) |
+| Integration | `tests/integration/` | Full clinician journey, two-tenant sharing rules, cascade clean-up |
+
+The original Django-runner tests inside each app (`apps/*/tests.py`, 87 tests) are kept and still pass: `python manage.py test`. CI runs both.
 
 To check a **running** server over real HTTP (standard library only, no extra install):
 
@@ -297,6 +322,7 @@ Every error uses the same envelope:
 - **Ownership is enforced in the queryset.** Patients and mappings are filtered by the current user, so someone else's record returns `404` rather than `403`. This avoids leaking which IDs exist. A user can only assign doctors to patients they own.
 - **Doctors are shared, edits are owner-only.** The brief says `GET /api/doctors/` returns *all* doctors, so doctors are a common directory; write access is restricted to the creator via an object-level permission.
 - **Data integrity lives in the database too.** Unique constraint on `(patient, doctor)`; case-insensitive unique doctor email; foreign keys with sensible delete rules (deleting a patient or doctor removes its mappings; a doctor outlives the account that created them). A race that slips past validation becomes a clean `409`, not a crash.
+- **No ID probing through filters.** `?patient=<id>` on the mappings list is a plain numeric filter, so another user's patient and a nonexistent one both return an empty list. A choice-style filter would answer differently and reveal which ids exist.
 - **Atomic requests** (`ATOMIC_REQUESTS`): each request is one transaction, so a failure never leaves partial writes.
 - **Secure by default.** Passwords hashed with PBKDF2 and validated; secrets only from environment variables; auth endpoints rate limited; login/register ignore a stale `Authorization` header; refresh tokens cannot be used as access tokens.
 - **Plain-array lists** match the stated API contract; pagination is opt-in so it never changes the response shape unexpectedly.

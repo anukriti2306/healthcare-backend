@@ -49,6 +49,13 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(TokenObtainPairSerializer):
     """Email + password -> access/refresh JWT pair (plus basic user info)."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # RegisterSerializer stores passwords verbatim (trim_whitespace=False).
+        # Login must compare them verbatim too, otherwise a password with
+        # leading/trailing spaces could be registered but never used to log in.
+        self.fields["password"].trim_whitespace = False
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
